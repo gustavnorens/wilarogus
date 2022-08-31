@@ -35,8 +35,11 @@ power1 n k
   | k == 0 = 1
   | k > 0 = product (replicate (fromInteger k) (fromInteger n))
 
-power102 :: Integer -> Integer -> Integer
-power102 n k 
+
+{- Vi bestämde oss för att skapa två olika funktioner. En som använde sig av List comprehension och
+en som använde den inbyggda funktionen replicate. -}
+power1Alt :: Integer -> Integer -> Integer
+power1Alt n k 
   | k < 0 = error "error"
   | k == 0 = 1
   | k > 0 = product [n | x <- [1..k]]
@@ -56,7 +59,7 @@ power2 n k
 -- Part D ----------------------------------------------------------------------
 test1 = power 9 9 == power1 9 9
 test2 = power1 9 9 == power102 9 9
-test3 = power102 (-8) 9 == power2 (-8) 9
+test3 = power1Alt (-8) 9 == power2 (-8) 9
 
 {- 
 <Describe your test cases here>
