@@ -6,8 +6,8 @@ License     : BSD
 Maintainer  : alexg@chalmers.se
 Stability   : experimental
 
-Authors     : <list your names here>
-Lab group   : <group number>
+Authors     : William Flodin Eriksson, Gustav Norén, Aron Karlsson
+Lab group   : grupp 10
 -}
 
 
@@ -58,7 +58,7 @@ power2 n k
 
 -- Part D ----------------------------------------------------------------------
 test1 = power 9 9 == power1 9 9
-test2 = power1 9 9 == power102 9 9
+test2 = power1 9 9 == power1Alt 9 9
 test3 = power1Alt (-8) 9 == power2 (-8) 9
 
 {- 
