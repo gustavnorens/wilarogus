@@ -74,3 +74,5 @@ comparePower2 x y = power x y == power2 x y
 
 testAll :: Integer -> Integer -> Bool
 testAll x y = comparePower1 x y && comparePower2 x y
+
+--Gurras test
