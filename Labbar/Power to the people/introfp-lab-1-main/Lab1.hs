@@ -25,15 +25,16 @@ power n k = n * power n (k-1)
 
 -- stepsPower k gives the number of multiplications executed by power n k
 stepsPower :: Integer -> Integer
-stepsPower k < 0    = error "negative exponent"
-stepsPower k >= 0   = k
+stepsPower k 
+  | k < 0     = error "power: negative argument"
+  | otherwise = k
 
 
 -- Part B ----------------------------------------------------------------------
 
 power1 :: Integer -> Integer -> Integer
 power1 n k 
-  | k < 0 = error "error"
+  | k < 0 = error "power: negative argument"
   | k == 0 = 1
   | k > 0 = product (replicate (fromInteger k) (fromInteger n))
 
@@ -42,7 +43,7 @@ power1 n k
 en som använde den inbyggda funktionen replicate. -}
 power1Alt :: Integer -> Integer -> Integer
 power1Alt n k 
-  | k < 0 = error "error"
+  | k < 0 = error "power: negative argument"
   | k == 0 = 1
   | k > 0 = product [n | x <- [1..k]]
 
@@ -51,7 +52,7 @@ power1Alt n k
 
 power2 :: Integer ->Integer -> Integer
 power2 n k
-  | k < 0 = error "error"
+  | k < 0 = error "power: negative argument"
   | k == 0 = 1
   | k `mod` 2 == 0 = power2 (n*n) (k `div` 2)  
   | otherwise = n * power2 n (k-1)
@@ -60,12 +61,26 @@ power2 n k
 
 -- Part D ----------------------------------------------------------------------
 
-test1 = power 9 9 == power1 9 9
-test2 = power1 9 9 == power1Alt 9 9
-test3 = power1Alt (-8) 9 == power2 (-8) 9
+test1 = power 2 3 == power1 2 3
+test2 = power 2 (-3) == power1 2 (-3)
+test3 = power 2 0 == power1 2 0
+
+test4 = power 2 3 == power2 2 3
+test5 = power 2 (-3) == power2 2 (-3)
+test6 = power 2 0 == power2 2 0
+test7 = power 2 4 == power2 2 4
 
 {- 
-<Describe your test cases here>
+Test 1-3 är för funktionen power1 från uppgift B, 
+test1 kollar om positiv exponent stämmer
+test2 ser om negativ exponent stämmer
+test3 ser om exponenten 0 stämmer
+
+test 4-7 är för funktionen power2 från uppgift C
+test4 kollar om positiv och udda exponent stämmer
+test5 ser om negativ exponent stämmer
+test6 ser om exponenten 0 stämmer 
+test7 ser om positiv och jämn exponent stämmer
 -}
 
 comparePower1 :: Integer -> Integer -> Bool
@@ -81,3 +96,4 @@ testAll x y = comparePower1 x y && comparePower2 x y
 
 -- Part E ----------------------------------------------------------------------
 
+-- Part F ----------------------------------------------------------------------
