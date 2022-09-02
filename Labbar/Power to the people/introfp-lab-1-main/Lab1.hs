@@ -62,25 +62,21 @@ power2 n k
 -- Part D ----------------------------------------------------------------------
 
 test1 = power 2 3 == power1 2 3
-test2 = power 2 (-3) == power1 2 (-3)
-test3 = power 2 0 == power1 2 0
+test2 = power 2 0 == power1 2 0
 
-test4 = power 2 3 == power2 2 3
-test5 = power 2 (-3) == power2 2 (-3)
-test6 = power 2 0 == power2 2 0
-test7 = power 2 4 == power2 2 4
+test3 = power 2 3 == power2 2 3
+test4 = power 2 0 == power2 2 0
+test5 = power 2 4 == power2 2 4
 
 {- 
-Test 1-3 är för funktionen power1 från uppgift B, 
+Test 1-2 är för funktionen power1 från uppgift B, 
 test1 kollar om positiv exponent stämmer
-test2 ser om negativ exponent stämmer
-test3 ser om exponenten 0 stämmer
+test2 ser om exponenten 0 stämmer
 
-test 4-7 är för funktionen power2 från uppgift C
-test4 kollar om positiv och udda exponent stämmer
-test5 ser om negativ exponent stämmer
-test6 ser om exponenten 0 stämmer 
-test7 ser om positiv och jämn exponent stämmer
+test 3-5 är för funktionen power2 från uppgift C
+test3 kollar om positiv och udda exponent stämmer
+test4 ser om exponenten 0 stämmer 
+test5 ser om positiv och jämn exponent stämmer
 -}
 
 comparePower1 :: Integer -> Integer -> Bool
@@ -89,11 +85,6 @@ comparePower1 x y = power x y == power1 x y
 comparePower2 :: Integer -> Integer -> Bool
 comparePower2 x y = power x y == power2 x y
 
-testAll :: Integer -> Integer -> Bool
-testAll x y = comparePower1 x y && comparePower2 x y
-
-
-
--- Part E ----------------------------------------------------------------------
-
--- Part F ----------------------------------------------------------------------
+testAll :: Bool
+testAll =
+  test1 && test2 && test3 && test4 && test5
