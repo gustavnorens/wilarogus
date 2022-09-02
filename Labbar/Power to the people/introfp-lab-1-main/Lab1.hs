@@ -13,6 +13,7 @@ Lab group   : grupp 10
 
 -- The power function uses explicit recursion to calculate n^k. We developed
 -- this function during a lecture.
+import MeasureTime
 power :: Integer -> Integer -> Integer
 power n k 
   | k < 0 = error "power: negative argument"
@@ -24,7 +25,8 @@ power n k = n * power n (k-1)
 
 -- stepsPower k gives the number of multiplications executed by power n k
 stepsPower :: Integer -> Integer
-stepsPower k = k 
+stepsPower k < 0    = error "negative exponent"
+stepsPower k >= 0   = k
 
 
 -- Part B ----------------------------------------------------------------------
@@ -57,13 +59,13 @@ power2 n k
 
 
 -- Part D ----------------------------------------------------------------------
+
 test1 = power 9 9 == power1 9 9
 test2 = power1 9 9 == power1Alt 9 9
 test3 = power1Alt (-8) 9 == power2 (-8) 9
 
 {- 
 <Describe your test cases here>
-
 -}
 
 comparePower1 :: Integer -> Integer -> Bool
@@ -74,3 +76,8 @@ comparePower2 x y = power x y == power2 x y
 
 testAll :: Integer -> Integer -> Bool
 testAll x y = comparePower1 x y && comparePower2 x y
+
+
+
+-- Part E ----------------------------------------------------------------------
+
