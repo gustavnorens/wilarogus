@@ -88,3 +88,7 @@ comparePower2 x y = power x y == power2 x y
 testAll :: Bool
 testAll =
   test1 && test2 && test3 && test4 && test5
+
+--Parf f
+table :: Integer -> Integer -> IO ()
+table n k = putStr (unwords [show k, show (power n k), show (power1 n k), show (power2 n k)])
