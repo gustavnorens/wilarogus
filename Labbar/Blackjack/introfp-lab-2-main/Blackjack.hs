@@ -1,5 +1,5 @@
 {-
-Grupp 10
+Grupp
 William Flodin,
 Gustav Norén
 Aron Karlsson
@@ -9,21 +9,7 @@ module Blackjack where
 import Cards
 import RunGame
 
--- | Constructor for the card Ace of Hearts
-aCard1 :: Card
-aCard1 = Card Ace Hearts
-
--- | Constructor for the card Ace of Spades
-aCard2 :: Card
-aCard2 = Card Ace Spades
-
--- | Contructor for the 7 of diamonds
-aCard3 :: Card
-aCard3 = Card (Numeric 7) Diamonds
-
--- | Constructor of a hand containing the three cards mentioned above
-aHand :: Hand
-aHand = [aCard1, aCard2, aCard3]
+-- Task A1
 -- | Constructor of a hand containing 2 of Hearts and Jack of Spades
 hand2 :: Hand
 hand2 = [Card (Numeric 2) Hearts, Card  Jack Spades]
@@ -48,6 +34,19 @@ sizeSteps = [ size hand2
             , 2
             ]
 
+-- Task A2
+-- | Constructor for the card 9 of Hearts
+aCard1 :: Card
+aCard1 = Card (Numeric 9) Hearts
+
+-- | Constructor for the card Queen of Spades
+aCard2 :: Card
+aCard2 = Card Queen Spades
+
+-- | Constructor of a hand containing the two cards mentioned above
+aHand :: Hand
+aHand = [aCard1, aCard2]
+
 -- | Funktion som given en rank returnerar en sträng med namnet på Ranken
 displayRank :: Rank -> String
 displayRank (Numeric n) = show n
@@ -62,6 +61,7 @@ display :: Hand -> String
 display [] = ""
 display (x:xs) = displayCard x ++ "\n" ++ display xs
 
+-- Task A3
 -- | Funktion som given en rank returnerar ett värdet på ranken i form av en int
 valueRank :: Rank -> Int
 valueRank (Numeric x) = x
@@ -96,6 +96,7 @@ valueCheck :: Hand -> Int
 valueCheck [] = 0 
 valueCheck (x:xs) = valueCard x + valueCheck xs
 
+--Task A4
 -- | Funktion som kollar om den givna handen har bustat
 gameOver :: Hand -> Bool
 gameOver h
