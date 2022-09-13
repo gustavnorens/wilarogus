@@ -45,7 +45,7 @@ aCard2 = Card Queen Spades
 
 -- | Constructor of a hand containing the two cards mentioned above
 aHand :: Hand
-aHand = [aCard1, aCard2]
+aHand = []
 
 -- | Funktion som given en rank returnerar en sträng med namnet på Ranken
 displayRank :: Rank -> String
@@ -109,3 +109,26 @@ winner g b
   | gameOver g == True = Bank
   | value b >= value g && value b < 22 = Bank
   | otherwise = Guest
+
+fullDeck :: Deck
+fullDeck = [Card x y | x <- giveRanks , y <- giveSuit]
+
+giveRanks :: [Rank]
+giveRanks = [Ace, King, Queen, Jack] ++ [Numeric x | x <-[10, 9..2]]
+
+giveSuit :: [Suit]
+giveSuit = [
+  Hearts,
+  Spades,
+  Diamonds,
+  Clubs]
+
+draw :: Deck -> Hand -> (Deck, Hand)
+draw [] _ = error "Deck is empty."
+draw (x:xs) y = (xs, (x:y))
+
+playBank :: Deck -> Hand
+playBank xs = undefined
+
+playBank' :: Deck -> Hand -> (Deck, Hand)
+playBank' deck bankHand = draw deck bankHand
