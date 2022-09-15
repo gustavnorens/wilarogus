@@ -134,15 +134,18 @@ playBank' xs ys
   | otherwise = playBank' (fst (draw xs ys)) (snd (draw xs ys))
 
 
-doubleList = [0.172, 0.37273]
+doubleList = [0.0000001]
 
 shuffle :: [Double] -> Deck -> Deck
 shuffle [] _ = []
 shuffle _ [] = []
-shuffle (x:xs) ds = ds!!(round (x * toEnum (length ds))) : [] ++ shuffle xs (removeCard (round (x * toEnum (length ds) - 1)) ds)
+shuffle (x:xs) ds 
+  | round (x * toEnum (length ds)) == 0 = ds!!(0) : [] ++ shuffle xs (removeCard 0 ds)
+  | otherwise = ds!!((round (x * toEnum (length ds))) - 1) : [] ++ shuffle xs (removeCard (round (x * toEnum (length ds) - 1)) ds)
 
 removeCard :: Int -> [a] -> [a]
 removeCard _ [] = []
 removeCard i (x:xs)
    | i == 0 = xs
    | otherwise = x : removeCard (i-1) xs
+
