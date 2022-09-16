@@ -5,9 +5,12 @@ Gustav Norén
 Aron Karlsson
 -}
 
+
+
 module Blackjack where
 import Cards
 import RunGame
+import Test.QuickCheck hiding (shuffle)
 
 -- Task A1
 -- | Constructor of a hand containing 2 of Hearts and Jack of Spades
@@ -83,16 +86,16 @@ numberOfAces (x:xs)
 -- | Returnerar det sammanlagda värdet på den givna handen använder sig av funktionen
 -- | value' för att kolla om värdet är större än 21 och sedan kör value igen och
 -- | byter all ess som har värde 11 till värde 1 och räknar ut värdet igen
+
 value :: Hand -> Int
 value [] = 0
 value (x:xs) 
-  | value' (x:xs) > 21 && numberOfAces (x:xs) > 0 = value' (x:xs) - 10 * numberOfAces (x:xs)
-  | otherwise = valueCard x + value xs
-
--- | Helper funktion till Value
-value' :: Hand -> Int 
-value' [] = 0 
-value' (x:xs) = valueCard x + value' xs
+  | value' (x:xs) > 21 = val (x:xs) - 10 * numberOfAces (x:xs)
+  | otherwise = val (x:xs)
+  where 
+    val = value' :: Hand -> Int 
+    value' [] = 0 
+    value' (x:xs) = valueCard x + value' xs 
 
 --Task A4
 -- | Funktion som kollar om den givna handen har bustat
@@ -108,12 +111,11 @@ winner g b
   | value b >= value g && value b < 22 = Bank
   | otherwise = Guest
 
-fullDeck :: Deck
-fullDeck = [Card x y | x <- giveRanks , y <- giveSuit]
-
+-- | Helper funktion som ger all valörer till fullDeck 
 giveRanks :: [Rank]
 giveRanks = [Ace, King, Queen, Jack] ++ [Numeric x | x <-[10, 9..2]]
 
+-- | Helper funktion som ger all färger till fullDeck
 giveSuit :: [Suit]
 giveSuit = [
   Hearts,
@@ -121,31 +123,73 @@ giveSuit = [
   Diamonds,
   Clubs]
 
+-- | Funktion som ger ut en full och oblandad kortlek
+fullDeck :: Deck
+fullDeck = [Card x y | x <- giveRanks , y <- giveSuit]
+
+-- | Funktion som drar ett kort och lägger det i en hand. Sedan skickar 
+-- | funktionen tillbaka en tuple av kortleken och den nya handen
 draw :: Deck -> Hand -> (Deck, Hand)
 draw [] _ = error "Deck is empty."
 draw (x:xs) y = (xs, (x:y))
 
+-- | Funktion som spelar för banken 
 playBank :: Deck -> Hand 
 playBank xs = playBank' xs []
 
+-- | Helper funktion till playBank som ser till att playbank inte behöver någon hand input när den körs.
 playBank' :: Deck -> Hand -> Hand
 playBank' xs ys 
   | value ys > 15 = ys
   | otherwise = playBank' (fst (draw xs ys)) (snd (draw xs ys))
 
-
-doubleList = [0.0000001]
-
+-- | Funktion som given en lista med doubles mellan 0-1 blandar korten i den ordningen 
+-- | som double listan bestämmer. Vad vi gör är att vi tar ut ett slumpmässigt kort ur den oblandade
+-- | kortleken a och lägger in det som första värdet i den nya kortleken b. Sedan kallar vi funktionen
+-- | en gång till fast denna gången med den nya kortleken a som nu har 51 kort. Slutligen returneras en
+-- | ny lista med 52 kort i blandad ordning.*
 shuffle :: [Double] -> Deck -> Deck
 shuffle [] _ = []
 shuffle _ [] = []
 shuffle (x:xs) ds 
-  | round (x * toEnum (length ds)) == 0 = ds!!(0) : [] ++ shuffle xs (removeCard 0 ds)
-  | otherwise = ds!!((round (x * toEnum (length ds))) - 1) : [] ++ shuffle xs (removeCard (round (x * toEnum (length ds) - 1)) ds)
+  | round (x * toEnum (length ds)) == 0 = ds!!(0) : 
+    [] ++ shuffle xs (removeCard 0 ds)
+  | otherwise = ds!!((round (x * toEnum (length ds))) - 1) : 
+    [] ++ shuffle xs (removeCard (round (x * toEnum (length ds) - 1)) ds)
 
+-- | Helper funktion till shuffle som ser till att kortet som flyttas från kortlek a till b inte can dras 2 gånger.
 removeCard :: Int -> [a] -> [a]
 removeCard _ [] = []
 removeCard i (x:xs)
    | i == 0 = xs
    | otherwise = x : removeCard (i-1) xs
 
+-- | Funktion som vi fått
+belongsTo :: Card -> Deck -> Bool
+c `belongsTo` []      = False
+c `belongsTo` (c':cs) = c == c' || c `belongsTo` cs
+
+-- | Funktion som vi fått
+prop_shuffle :: Card -> Deck -> Rand -> Bool
+prop_shuffle card deck (Rand randomlist) =
+    card `belongsTo` deck == card `belongsTo` shuffle randomlist deck
+
+-- | Funktion som jämför storleken på två kortlekar före och efter man blandat
+prop_size_shuffle :: Rand -> Deck -> Bool
+prop_size_shuffle (Rand rs) ds = size ds == size (shuffle rs ds)
+
+-- | Givna funktioner
+implementation = Interface
+  {  iFullDeck  = fullDeck
+  ,  iValue     = value
+  ,  iDisplay   = display
+  ,  iGameOver  = gameOver
+  ,  iWinner    = winner
+  ,  iDraw      = draw
+  ,  iPlayBank  = playBank
+  ,  iShuffle   = shuffle
+  }
+
+-- | Init
+main :: IO ()
+main = runGame implementation
