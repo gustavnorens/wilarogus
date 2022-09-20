@@ -141,7 +141,9 @@ playBank xs = playBank' xs []
 playBank' :: Deck -> Hand -> Hand
 playBank' xs ys 
   | value ys > 15 = ys
-  | otherwise = playBank' (fst (draw xs ys)) (snd (draw xs ys))
+  | otherwise = playBank' dr hand
+  where 
+    (dr, hand) = draw xs ys
 
 -- | Funktion som given en lista med doubles mellan 0-1 blandar korten i den ordningen 
 -- | som double listan bestämmer. Vad vi gör är att vi tar ut ett slumpmässigt kort ur den oblandade
