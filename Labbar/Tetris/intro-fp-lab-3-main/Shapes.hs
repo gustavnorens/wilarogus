@@ -86,9 +86,11 @@ shapeSize (Shape (x:xs)) = (length x, length (x:xs))
 -- ** A3
 
 -- | Count how many non-empty squares a shape contains
+-- Rowcount checks how many empty squares there are in a row
 blockCount :: Shape -> Int
 blockCount (Shape []) = 0
-blockCount (Shape (x:xs)) = (length x - rowCount x) + (blockCount (Shape xs)) 
+blockCount (Shape (x:xs)) = (length x - rowCount x) +
+  (blockCount (Shape xs))
   where 
     rowCount :: Row -> Int
     rowCount [] = 0
@@ -103,13 +105,16 @@ blockCount (Shape (x:xs)) = (length x - rowCount x) + (blockCount (Shape xs))
 prop_Shape :: Shape -> Bool
 prop_Shape (Shape []) = False
 prop_Shape (Shape [x]) = areRowsEqual (Shape [x])
-prop_Shape (Shape (x:xs)) = areRowsEqual (Shape (x:xs)) && length x >= 1 && length (x:xs) >= 1
+prop_Shape (Shape (x:xs)) = areRowsEqual (Shape (x:xs)) &&
+  length x >= 1 && length (x:xs) >= 1
 
-
+-- A function that checks of all the rows on a given shape 
+-- has the same size/length
 areRowsEqual :: Shape -> Bool
 areRowsEqual (Shape []) = False
 areRowsEqual (Shape [x]) = True
-areRowsEqual (Shape (x:xs)) = length x == length (head xs) && areRowsEqual (Shape xs)
+areRowsEqual (Shape (x:xs)) = length x == length (head xs) &&
+  areRowsEqual (Shape xs)
 -- * Test data generators
 
 -- ** A5
@@ -140,31 +145,40 @@ rotateShape (Shape xs) = Shape (transpose (reverse xs))
 shiftShape :: (Int, Int) -> Shape -> Shape
 shiftShape (a, b) s = shiftShapeVer b (shiftShapeHor a s)
 
+-- A helper function that adds empty squares to the left of the shape
 shiftShapeHor :: Int -> Shape -> Shape
 shiftShapeHor i (Shape [xs]) = Shape ([replicate i Nothing ++ xs])
-shiftShapeHor i (Shape (x:xs)) = Shape ((replicate i Nothing ++ x) : rows (shiftShapeHor i (Shape xs)))
+shiftShapeHor i (Shape (x:xs)) = Shape ((replicate i Nothing ++ x) :
+  rows (shiftShapeHor i (Shape xs)))
 
+-- A helper function that adds empty squares below the shape
 shiftShapeVer :: Int -> Shape -> Shape
 shiftShapeVer 0 s = s
-shiftShapeVer i s = Shape ((replicate (fst (shapeSize s)) Nothing) : rows (shiftShapeVer (i-1) s))
+shiftShapeVer i s = Shape ((replicate (fst (shapeSize s)) Nothing) :
+  rows (shiftShapeVer (i-1) s))
 
 -- ** A9
 -- | padShape adds empty sqaure below and to the right of the shape
 padShape :: (Int, Int) -> Shape -> Shape
 padShape (a, b) s = padShapeVer b (padShapeHor a s)
 
+-- A helper function that adds empty squares to the right of the shape
 padShapeHor :: Int -> Shape -> Shape
 padShapeHor i (Shape [xs]) = Shape ([xs ++ replicate i Nothing])
-padShapeHor i (Shape (x:xs)) = Shape ((x ++ replicate i Nothing) : rows (padShapeHor (i) (Shape xs)))
+padShapeHor i (Shape (x:xs)) = Shape ((x ++ replicate i Nothing) :
+  rows (padShapeHor (i) (Shape xs)))
 
+-- A helper function that adds empty squares below the shape
 padShapeVer :: Int -> Shape -> Shape
 padShapeVer 0 s = s
-padShapeVer i s = Shape ( rows (padShapeVer (i-1) s) ++ [(replicate (fst (shapeSize s)) Nothing)])
+padShapeVer i s = Shape ( rows (padShapeVer (i-1) s) ++ 
+  [(replicate (fst (shapeSize s)) Nothing)])
 
 -- ** A10
 -- | pad a shape to a given size
 padShapeTo :: (Int, Int) -> Shape -> Shape
-padShapeTo (a, b) s = padShape (a - ((fst (shapeSize s))), (b - (snd (shapeSize s)))) s  
+padShapeTo (a, b) s = padShape 
+  (a - ((fst (shapeSize s))), (b - (snd (shapeSize s)))) s  
 -- * Comparing and combining shapes
 
 -- ** B1
