@@ -90,7 +90,7 @@ numberOfAces (x:xs)
 value :: Hand -> Int
 value [] = 0
 value (x:xs) 
-  | value' (x:xs) > 21 = val (x:xs) - 10 * numberOfAces (x:xs)
+  | val (x:xs) > 21 = val (x:xs) - 10 * numberOfAces (x:xs)
   | otherwise = val (x:xs)
   where 
     val = value' :: Hand -> Int 
@@ -140,7 +140,7 @@ playBank xs = playBank' xs []
 -- | Helper funktion till playBank som ser till att playbank inte behöver någon hand input när den körs.
 playBank' :: Deck -> Hand -> Hand
 playBank' xs ys 
-  | value ys > 15 = ys
+  | value hand > 15 = hand
   | otherwise = playBank' dr hand
   where 
     (dr, hand) = draw xs ys
@@ -153,10 +153,7 @@ playBank' xs ys
 shuffle :: [Double] -> Deck -> Deck
 shuffle [] _ = []
 shuffle _ [] = []
-shuffle (x:xs) ds 
-  | round (x * toEnum (length ds)) == 0 = ds!!(0) : 
-    [] ++ shuffle xs (removeCard 0 ds)
-  | otherwise = ds!!((round (x * toEnum (length ds))) - 1) : 
+shuffle (x:xs) ds = ds!!((floor (x * toEnum (length ds))) - 1) : 
     [] ++ shuffle xs (removeCard (round (x * toEnum (length ds) - 1)) ds)
 
 -- | Helper funktion till shuffle som ser till att kortet som flyttas från kortlek a till b inte can dras 2 gånger.
