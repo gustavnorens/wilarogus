@@ -7,6 +7,13 @@ Maintainer  : alexg@chalmers.se
 Stability   : experimental
 -}
 
+{-
+Grupp 10:
+  Gustav Norén,
+  William Flodin,
+  Aron Karlsson
+-}
+
 module Shapes where
 
 import Data.List (transpose)
