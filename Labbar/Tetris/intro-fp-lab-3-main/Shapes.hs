@@ -215,7 +215,11 @@ zipShapeWith f (Shape (x:xs)) (Shape (y:ys)) = Shape (zipRowsWith f x y : rows (
 -- | Combine two shapes. The two shapes should not overlap.
 -- The resulting shape will be big enough to fit both shapes.
 combine :: Shape -> Shape -> Shape
-combine s1 s2 = zipShapeWith compSquares s1 s2
+combine s1 s2 = zipShapeWith compSquares (pads s1) (pads s2)
+  where 
+    pads = padShapeTo (max (fst (shapeSize s1)) (fst (shapeSize s2)) , max (snd (shapeSize s1)) (snd (shapeSize s2)))
+
+
 
 compSquares :: Square -> Square -> Square
 compSquares x y
@@ -223,4 +227,3 @@ compSquares x y
   | x /= Nothing && y == Nothing = x
   | x == Nothing && y == Nothing = Nothing
   | otherwise = error "overlaping shapes"
-
