@@ -154,15 +154,14 @@ shiftShape (a, b) s = shiftShapeVer b (shiftShapeHor a s)
 
 -- A helper function that adds empty squares to the left of the shape
 shiftShapeHor :: Int -> Shape -> Shape
-shiftShapeHor i (Shape [xs]) = Shape ([replicate i Nothing ++ xs])
+shiftShapeHor i (Shape []) = Shape []
 shiftShapeHor i (Shape (x:xs)) = Shape ((replicate i Nothing ++ x) :
   rows (shiftShapeHor i (Shape xs)))
 
 -- A helper function that adds empty squares below the shape
 shiftShapeVer :: Int -> Shape -> Shape
-shiftShapeVer 0 s = s
-shiftShapeVer i s = Shape ((replicate (fst (shapeSize s)) Nothing) :
-  rows (shiftShapeVer (i-1) s))
+shiftShapeVer i s = Shape ((replicate i (replicate 
+  (fst (shapeSize s)) Nothing)) ++ rows s)
 
 -- ** A9
 -- | padShape adds empty sqaure below and to the right of the shape
@@ -171,16 +170,14 @@ padShape (a, b) s = padShapeVer b (padShapeHor a s)
 
 -- A helper function that adds empty squares to the right of the shape
 padShapeHor :: Int -> Shape -> Shape
-padShapeHor i (Shape [xs]) = Shape ([xs ++ replicate i Nothing])
+padShapeHor i (Shape []) = Shape []
 padShapeHor i (Shape (x:xs)) = Shape ((x ++ replicate i Nothing) :
   rows (padShapeHor (i) (Shape xs)))
 
 -- A helper function that adds empty squares below the shape
 padShapeVer :: Int -> Shape -> Shape
-padShapeVer 0 s = s
-padShapeVer i s = Shape ( rows (padShapeVer (i-1) s) ++ 
-  [(replicate (fst (shapeSize s)) Nothing)])
-
+padShapeVer i s = Shape (rows s ++ 
+  (replicate i (replicate (fst (shapeSize s)) Nothing)))
 -- ** A10
 -- | pad a shape to a given size
 padShapeTo :: (Int, Int) -> Shape -> Shape
@@ -192,15 +189,38 @@ padShapeTo (a, b) s = padShape
 
 -- | Test if two shapes overlap
 overlaps :: Shape -> Shape -> Bool
-s1 `overlaps` s2 = error "A11 overlaps undefined"
+overlaps (Shape []) _ = False
+overlaps _ (Shape []) = False
+overlaps (Shape (x:xs)) (Shape (y:ys))
+  | rowsOverlap x y = True
+  | otherwise = False || overlaps (Shape xs) (Shape ys)
+
+rowsOverlap :: Row -> Row -> Bool
+rowsOverlap xs ys = sameElement 
+  (snd (unzip (filter (\x -> (fst x) /= Nothing) (zip xs [1..(length xs)])))) 
+  (snd (unzip (filter (\x -> (fst x) /= Nothing) (zip ys [1..(length ys)]))))
+  where
+    sameElement :: Eq a => [a] -> [a] -> Bool
+    sameElement xs ys = xs /= [x | x <- xs, not (elem x ys)]
 
 -- ** B2
 -- | zipShapeWith, like 'zipWith' for lists
 zipShapeWith :: (Square -> Square -> Square) -> Shape -> Shape -> Shape
-zipShapeWith = error "A12 zipShapeWith undefined"
-
--- ** B3
+zipShapeWith f (Shape []) _ = (Shape [])
+zipShapeWith f _ (Shape []) = (Shape [])
+zipShapeWith f (Shape (x:xs)) (Shape (y:ys)) = Shape (zipRowsWith f x y : rows (zipShapeWith f (Shape xs) (Shape ys)))
+  where 
+    zipRowsWith :: (Square -> Square -> Square) ->  Row -> Row -> Row
+    zipRowsWith f xs ys = zipWith f xs ys 
 -- | Combine two shapes. The two shapes should not overlap.
 -- The resulting shape will be big enough to fit both shapes.
 combine :: Shape -> Shape -> Shape
-s1 `combine` s2 = error "A13 zipShapeWith undefined"
+combine s1 s2 = zipShapeWith compSquares s1 s2
+
+compSquares :: Square -> Square -> Square
+compSquares x y
+  | x == Nothing && y /= Nothing = y
+  | x /= Nothing && y == Nothing = x
+  | x == Nothing && y == Nothing = Nothing
+  | otherwise = error "overlaping shapes"
+
