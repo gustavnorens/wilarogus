@@ -219,8 +219,6 @@ combine s1 s2 = zipShapeWith compSquares (pads s1) (pads s2)
   where 
     pads = padShapeTo (max (fst (shapeSize s1)) (fst (shapeSize s2)) , max (snd (shapeSize s1)) (snd (shapeSize s2)))
 
-
-
 compSquares :: Square -> Square -> Square
 compSquares x y
   | x == Nothing && y /= Nothing = y

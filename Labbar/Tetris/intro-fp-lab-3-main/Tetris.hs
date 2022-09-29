@@ -63,11 +63,17 @@ place (v, s) = shiftShape v s
 
 -- | An invariant that startTetris and stepTetris should uphold
 prop_Tetris :: Tetris -> Bool
-prop_Tetris t = True -- incomplete !!!
+prop_Tetris t = prop_Shape (snd (piece t)) && shapeSize (well t) == wellSize
 
 -- | Add black walls around a shape
 addWalls :: Shape -> Shape
-addWalls s = s -- incomplete !!!
+addWalls s = Shape (rows (padShape (1, 1) (shiftShape (1, 1) s)))
+
+makeRowBlack :: Row -> Row
+makeRowBlack [] = []
+makeRowBlack xs 
+
+
 
 -- | Visualize the current game state. This is what the user will see
 -- when playing the game.
