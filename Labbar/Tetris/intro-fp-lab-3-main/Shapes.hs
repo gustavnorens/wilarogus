@@ -187,7 +187,8 @@ padShapeTo (a, b) s = padShape
 
 -- ** B1
 
--- | Test if two shapes overlap
+-- | Test if two shapes overlap. Uses rowsOverlap to check if any squares overlap
+-- | and then returns true if any squares in the shape does overlap.
 overlaps :: Shape -> Shape -> Bool
 overlaps (Shape []) _ = False
 overlaps _ (Shape []) = False
@@ -195,33 +196,48 @@ overlaps (Shape (x:xs)) (Shape (y:ys))
   | rowsOverlap x y = True
   | otherwise = False || overlaps (Shape xs) (Shape ys)
 
+-- | Checks if two given rows overlap by comparing their squares. Turns the rows into tuples
+-- | with their value e.g "Nothing" and position. Then we filter away all tuples that have the value
+-- | Nothing and so we are left with only colored squares. Now it compares the positions of the 
+-- | remaining colors and if either list contains the same element they must overlap.
 rowsOverlap :: Row -> Row -> Bool
 rowsOverlap xs ys = sameElement 
-  (snd (unzip (filter (\x -> (fst x) /= Nothing) (zip xs [1..(length xs)])))) 
-  (snd (unzip (filter (\x -> (fst x) /= Nothing) (zip ys [1..(length ys)]))))
+  (zipLogic (zip xs [1..(length xs)]))
+  (zipLogic (zip ys [1..(length ys)]))
   where
+    -- | Checks for every value in xs if it exists in ys
     sameElement :: Eq a => [a] -> [a] -> Bool
     sameElement xs ys = xs /= [x | x <- xs, not (elem x ys)]
+    -- | Just to make the rowsOverlap function a little bit more compact
+    zipLogic :: [(Square, Int)] -> [Int]
+    zipLogic xs = snd (unzip (filter (\x -> (fst x) /= Nothing) xs))
 
 -- ** B2
--- | zipShapeWith, like 'zipWith' for lists
+-- | zipShapeWith, like 'zipWith' for lists. Uses zipRowsWith so that zipWith extends to every
+-- | square in a given shape instead of just every row.
 zipShapeWith :: (Square -> Square -> Square) -> Shape -> Shape -> Shape
 zipShapeWith f (Shape []) _ = (Shape [])
 zipShapeWith f _ (Shape []) = (Shape [])
-zipShapeWith f (Shape (x:xs)) (Shape (y:ys)) = Shape (zipRowsWith f x y : rows (zipShapeWith f (Shape xs) (Shape ys)))
+zipShapeWith f (Shape (x:xs)) (Shape (y:ys)) = Shape 
+  (zipRowsWith f x y : rows (zipShapeWith f (Shape xs) (Shape ys)))
   where 
+    -- | calls zipWith on every square in two Rows
     zipRowsWith :: (Square -> Square -> Square) ->  Row -> Row -> Row
     zipRowsWith f xs ys = zipWith f xs ys 
+
 -- | Combine two shapes. The two shapes should not overlap.
--- The resulting shape will be big enough to fit both shapes.
+-- | The resulting shape will be big enough to fit both shapes. Uses two helper functions pads and
+-- | compSquares. Pads just to make combine eaiser to read and compSquares which we use with the 
+-- | previously defined zipShapeWith to figure out what the squares of the new shape should be.
+-- |  
 combine :: Shape -> Shape -> Shape
 combine s1 s2 = zipShapeWith compSquares (pads s1) (pads s2)
   where 
-    pads = padShapeTo (max (fst (shapeSize s1)) (fst (shapeSize s2)) , max (snd (shapeSize s1)) (snd (shapeSize s2)))
-
-compSquares :: Square -> Square -> Square
-compSquares x y
-  | x == Nothing && y /= Nothing = y
-  | x /= Nothing && y == Nothing = x
-  | x == Nothing && y == Nothing = Nothing
-  | otherwise = error "overlaping shapes"
+    pads = padShapeTo (max (fst (shapeSize s1)) (fst (shapeSize s2)), 
+      max (snd (shapeSize s1)) (snd (shapeSize s2)))
+    compSquares :: Square -> Square -> Square
+    compSquares x y
+      | x == Nothing && y /= Nothing = y
+      | x /= Nothing && y == Nothing = x
+      | x == Nothing && y == Nothing = Nothing
+      | otherwise = error "overlapping shapes"
