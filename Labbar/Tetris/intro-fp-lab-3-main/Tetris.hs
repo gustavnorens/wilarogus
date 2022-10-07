@@ -76,7 +76,8 @@ prop_Tetris t = prop_Shape (snd (piece t)) && shapeSize (well t) == wellSize
 addWalls :: Shape -> Shape
 addWalls s = makeTopRowBlack (Shape (rows (padShape (1, 1) (shiftShape (1, 1) s))))
   where 
-    -- | Makes the top row black, rotates it and calls itself recursively so that all edges become black
+    -- | Makes the top row black, rotates it and calls itself recursively so 
+    --  that all edges become black
     makeTopRowBlack :: Shape -> Shape
     makeTopRowBlack (Shape (x:xs)) 
       | x == replicate (length x) (Just Black) = (Shape (x:xs))
@@ -86,7 +87,8 @@ addWalls s = makeTopRowBlack (Shape (rows (padShape (1, 1) (shiftShape (1, 1) s)
         makeRowBlack :: Row -> Row
         makeRowBlack xs = map (\x -> Just Black) xs
 
--- | Takes a position and Tetris then returns the Tetris with the updated postion of the falling shape
+-- | Takes a position and Tetris then returns the Tetris with the updated postion
+  --  of the falling shape
 move :: Pos -> Tetris -> Tetris
 move p t = Tetris (add p (fst (piece t)), snd (piece t)) (well t) (shapes t)
 
@@ -115,6 +117,10 @@ startTetris rs = Tetris (startPosition, piece) well supply
 
 -- | React to input. The function returns 'Nothing' when it's game over,
 -- and @'Just' (n,t)@, when the game continues in a new state @t@.
+
+-- When tthis function is called it checks which action was commited
+-- and depending on the action calls on another function. If no action was 
+-- commited it calls on the tick function
 stepTetris :: Action -> Tetris -> Maybe (Int, Tetris)
 stepTetris action t
   | action == MoveDown = Just (0, (moveToBottom t))
@@ -124,10 +130,13 @@ stepTetris action t
   | collision (move (0, 1) t) = dropNewPiece t
   | otherwise = tick t 
   where
-    moveToBottom t 
+    moveToBottom t           -- Moves a piece downwards until it collides with the well th shape in the well
       | collision (move (0, 1) t) = t
-      | otherwise = moveToBottom (move (0, 1) t)
+      | otherwise = (moveToBottom (move (0, 1) t))
 
+-- A functions that checks if the falling piece collides with the edges of the well
+-- or with the pieces in the well. It calls on different helper functions that 
+-- checks one collision possibility each.
 collision :: Tetris -> Bool
 collision t =
   collisionRight t ||
@@ -147,11 +156,16 @@ collisionDown (Tetris (p, s) w ss) = snd p + snd (shapeSize s) > wellHeight
 collisionOverlap :: Tetris -> Bool
 collisionOverlap (Tetris (p, s) w ss)  = overlaps (place (p, s)) w
 
+-- A function which moves the falling piece horizontally. A negative Int moves 
+-- it to the left and a positive int moves it to the right
 movePiece :: Int -> Tetris -> Tetris
 movePiece i t
   | collision (move (i, 0) t) = t
   | otherwise = move (i, 0) t
 
+-- A function which rotates the falling piece with the help of the rotateShape 
+-- function. If the rotaded piece would collide with anything 
+-- the functions returns the non rotated piece
 rotate :: Tetris -> Tetris
 rotate t
   | collision (Tetris (p, rotateShape s) w ss) = t
@@ -168,12 +182,24 @@ adjust t
   | otherwise = t
 -}
 
+-- Combines the falling shape with the shapes in the well and takes
+-- out a new shape from the shape supply which will be the new falling piece.
 dropNewPiece :: Tetris -> Maybe (Int, Tetris)
-dropNewPiece (Tetris (p, s) w (x:xs)) = Just ((fst (clearLines (combine w (place (p, s))))), (Tetris (startPosition, x) (snd (clearLines (combine w (place (p, s))))) xs))
+dropNewPiece (Tetris (p, s) w (x:xs)) = Just ((fst (clearLines (combine w (place (p, s)))))
+  , (Tetris (startPosition, x) (snd (clearLines (combine w (place (p, s))))) xs))
 
+
+-- A functions that removes a line if it is full of non-empty squares. 
+-- Returns how many lines where cleared and the new shape.
+-- Calls on the keepline funciton which checks if the line is full or not and
+-- returns a bool that indicates if the line shall be removed.
+-- Also calls on the linesRemoved funcitons that checks how many lines where cleared.
+-- linesRemovied returns and tells us how much we should shift the remainding 
+-- shapes so they become one again.
 clearLines :: Shape -> (Int, Shape)
 clearLines (Shape []) = (0, Shape [])
-clearLines (Shape (xs)) = (linesRemoved xs, shiftShapeVer (linesRemoved xs) (Shape ((filter keepLine xs))))
+clearLines (Shape (xs)) = (linesRemoved xs, shiftShapeVer (linesRemoved xs) 
+  (Shape ((filter keepLine xs))))
   where
     keepLine :: Row -> Bool
     keepLine rs
@@ -181,4 +207,3 @@ clearLines (Shape (xs)) = (linesRemoved xs, shiftShapeVer (linesRemoved xs) (Sha
       | otherwise = True
     linesRemoved :: [Row] -> Int
     linesRemoved xs = wellHeight - (length (filter keepLine xs))
-
