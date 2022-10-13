@@ -24,13 +24,13 @@ data BinOp = AddOp | MulOp deriving Eq
 -- x, your data type should *not* use 'String' or 'Char' anywhere, since this is
 -- not needed.
 
-data Expr = Num Int | Binary BinOp Expr Expr | Exp Int
+data Expr = Num Int | Binary BinOp Expr Expr | Expo Int
 
 --------------------------------------------------------------------------------
 -- * A2
 -- Define the data type invariant that checks that exponents are never negative
 prop_Expr :: Expr -> Bool
-prop_Expr (Exp n)                 = if n < 0 then False else True
+prop_Expr (Expo n)                = if n < 0 then False else True
 prop_Expr (Binary _  expr1 expr2) = and $ map prop_Expr [expr1, expr2]
 prop_Expr _                       = True 
 
@@ -42,11 +42,11 @@ prop_Expr _                       = True
 
 instance Show Expr where
   show (Binary binOp expr1 expr2)
-    | binOp == AddOp = show expr1 ++ " + " ++ show expr2
-    | otherwise      = show expr1 ++ " * " ++ show expr2
-  show (Num 1)       = "x"
+    | binOp == AddOp = "(" ++ show expr1 ++ " + " ++ show expr2 ++ ")"
+    | otherwise      = "(" ++ show expr1 ++ " * " ++ show expr2 ++ ")"
+  show (Expo 1)      = "x"
   show (Num n)       = show n
-  show (Exp n)       = "x^" ++ show n
+  show (Expo n)      = "x^" ++ show n
   
 
 
@@ -62,26 +62,22 @@ instance Show Expr where
 -- could use to find a smaller counterexample for failing tests.
 
 instance Arbitrary Expr
-  where arbitrary = genExpr
-
-genExpr = frequency [(1, genNum),(1, genExp),(3, genBinary)]
+  where arbitrary = frequency [(1, genNum),(1, genExpo),(3, genBinary)]
 
 genNum :: Gen Expr
 genNum = do
-  i <- choose (0, 10)
+  i <- choose (0, 100)
   return (Num i)
-genExp :: Gen Expr 
-genExp = do
+genExpo :: Gen Expr 
+genExpo = do
   i <- choose (1, 10)
-  return (Exp i)
+  return (Expo i)
 genBinary :: Gen Expr
 genBinary = do
-  expr1 <- oneof [genNum, genExp, genBinary]
-  expr2 <- oneof [genNum, genExp, genBinary]
+  expr1 <- oneof [genNum, genExpo, genBinary]
+  expr2 <- oneof [genNum, genExpo, genBinary]
   binOp <- elements [AddOp, MulOp]
   return (Binary binOp expr1 expr2)
-
-
 
 --------------------------------------------------------------------------------
 -- * A5
@@ -89,7 +85,12 @@ genBinary = do
 -- evaluates it.
 
 eval :: Int -> Expr -> Int
-eval = undefined
+eval i (Binary binOp expr1 expr2) 
+  | binOp == AddOp = sum $ map (eval i) [expr1, expr2]
+  | otherwise      = product $ map (eval i) [expr1, expr2]
+eval i (Num n)     = n
+eval i (Expo n)    = i ^ n
+
 
 --------------------------------------------------------------------------------
 -- * A6
@@ -98,20 +99,28 @@ eval = undefined
 -- by solving the smaller problems and combining them in the right way. 
 
 exprToPoly :: Expr -> Poly
-exprToPoly = undefined
-
+exprToPoly (Num n)                    = fromList [n]
+exprToPoly (Expo n)                   = fromList (1 : replicate n 0) 
+exprToPoly (Binary binOp expr1 expr2)
+  | binOp == AddOp = (exprToPoly expr1) + (exprToPoly expr2)
+  | otherwise = (exprToPoly expr1) * (exprToPoly expr2)
 -- Define (and check) @prop_exprToPoly@, which checks that evaluating the
 -- polynomial you get from @exprToPoly@ gives the same answer as evaluating
 -- the expression.
 
-prop_exprToPoly = undefined
+prop_exprToPoly :: Expr -> Int -> Bool
+prop_exprToPoly expr i = eval i expr == evalPoly i (exprToPoly expr)
 
 --------------------------------------------------------------------------------
 -- * A7
 -- Now define the function going in the other direction.
 
 polyToExpr :: Poly -> Expr
-polyToExpr = undefined
+polyToExpr poly = (toList poly) 
+  where 
+    helper :: [Int] -> Expr
+    helper [] = Num 0
+    helper (x:xs) = undefined
 
 -- Write (and check) a quickCheck property for this function similar to
 -- question 6. 
