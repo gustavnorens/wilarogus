@@ -66,7 +66,7 @@ instance Arbitrary Expr
 
 genNum :: Gen Expr
 genNum = do
-  i <- choose (0, 100)
+  i <- choose (-100, 100)
   return (Num i)
 genExpo :: Gen Expr 
 genExpo = do
@@ -116,16 +116,28 @@ prop_exprToPoly expr i = eval i expr == evalPoly i (exprToPoly expr)
 -- Now define the function going in the other direction.
 
 polyToExpr :: Poly -> Expr
-polyToExpr poly = (toList poly) 
+polyToExpr p = listToExpr $ toList p
   where 
-    helper :: [Int] -> Expr
-    helper [] = Num 0
-    helper (x:xs) = undefined
+    listToExpr :: [Int] -> Expr
+    listToExpr [] = Num 0
+    listToExpr [x] = Num x
+    listToExpr (x:xs)
+      | x == 0 = listToExpr xs
+      | x == 1 = garbageCollector (Binary AddOp (Expo (length xs)) (listToExpr xs))
+      | otherwise = garbageCollector (Binary AddOp (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
+      where
+        garbageCollector :: Expr -> Expr
+        garbageCollector (Binary AddOp expr (Num 0)) = expr
+        garbageCollector expr = expr
 
+
+
+    
+    
 -- Write (and check) a quickCheck property for this function similar to
 -- question 6. 
 
-prop_polyToExpr = undefined
+prop_polyToExpr poly i = evalPoly i poly == eval i (polyToExpr poly) 
 
 --------------------------------------------------------------------------------
 -- * A8
@@ -133,7 +145,7 @@ prop_polyToExpr = undefined
 -- to a polynomial and back again.
 
 simplify :: Expr -> Expr
-simplify = undefined
+simplify = polyToExpr . exprToPoly
 
 --------------------------------------------------------------------------------
 -- * A9
@@ -143,8 +155,18 @@ simplify = undefined
 -- power of zero. (You may need to fix A7)
 
 prop_noJunk :: Expr -> Bool
-prop_noJunk = undefined
-
+prop_noJunk expr =  garbageChecker $ simplify expr
+  where 
+    garbageChecker (Expo 0)                       = False
+    garbageChecker (Binary binOp (Num 0) _)       = False
+    garbageChecker (Binary binOp _ (Num 0))       = False
+    garbageChecker (Binary MulOp (Num 1) _)       = False
+    garbageChecker (Binary MulOp _ (Num 1))       = False
+    garbageChecker (Binary binOp (Num _) (Num _)) = False
+    garbageChecker (Binary binOp (Expo 0) _)      = False
+    garbageChecker (Binary binOp _ (Expo 0))      = False
+    garbageChecker (Binary binOp expr1 expr2)     = and $ map prop_noJunk [expr1, expr2]
+    garbageChecker expr                           = True 
 --------------------------------------------------------------------------------
 -- * A10
 -- Write two IO functions that read respectively write the difficulty, which is
