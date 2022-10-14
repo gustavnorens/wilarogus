@@ -41,9 +41,14 @@ prop_Expr _                       = True
 -- as just x. 
 
 instance Show Expr where
+  show (Binary MulOp (Num 1) expr) = show expr
+  show (Binary MulOp expr (Num 1)) = show expr
+  show (Binary AddOp (Num 0) expr) = show expr
+  show (Binary AddOp expr (Num 0)) = show expr
+  show (Binary AddOp expr (Num x)) = if x < 0 then show expr ++ show (Num x) else show expr ++ "+" ++ show (Num x)
   show (Binary binOp expr1 expr2)
-    | binOp == AddOp = "(" ++ show expr1 ++ " + " ++ show expr2 ++ ")"
-    | otherwise      = "(" ++ show expr1 ++ " * " ++ show expr2 ++ ")"
+    | binOp == AddOp = show expr1 ++ "+" ++ show expr2
+    | otherwise      = show expr1 ++ "*" ++ show expr2
   show (Expo 1)      = "x"
   show (Num n)       = show n
   show (Expo n)      = "x^" ++ show n
@@ -62,23 +67,39 @@ instance Show Expr where
 -- could use to find a smaller counterexample for failing tests.
 
 instance Arbitrary Expr
-  where arbitrary = frequency [(1, genNum),(1, genExpo),(3, genBinary)]
+  where arbitrary = frequency [(1, genNum 10),(1, genExpo 9),(3, genBinary)]
 
-genNum :: Gen Expr
-genNum = do
-  i <- choose (-100, 100)
+genNum :: Difficulty -> Gen Expr
+genNum n = do
+  i <- choose (-10 + (-10 * n), 10 + (n * 10))
   return (Num i)
-genExpo :: Gen Expr 
-genExpo = do
-  i <- choose (1, 10)
+genNum' :: Difficulty -> Gen Expr
+genNum' n = do
+  i <- choose (1, 1 + n)
+  return (Num i)
+genExpo :: Difficulty -> Gen Expr 
+genExpo n = do
+  i <- choose (1, 1 + n)
   return (Expo i)
 genBinary :: Gen Expr
 genBinary = do
-  expr1 <- oneof [genNum, genExpo, genBinary]
-  expr2 <- oneof [genNum, genExpo, genBinary]
+  expr1 <- oneof [genNum 10, genExpo 9, genBinary]
+  expr2 <- oneof [genNum 10, genExpo 9, genBinary]
   binOp <- elements [AddOp, MulOp]
   return (Binary binOp expr1 expr2)
 
+genDifficulties :: Difficulty -> Gen Expr
+genDifficulties n = do
+  binExpo <- (genBinexpo n)
+  diff <- frequency [(2, genNum n),(3, genDifficulties (n-1))]
+  num <-genNum n 
+  return (if n > 0 then (Binary AddOp binExpo diff) else (Binary AddOp binExpo num))
+
+genBinexpo :: Difficulty -> Gen Expr
+genBinexpo n = do
+  expo <- genExpo n
+  num <- genNum' n
+  return (Binary MulOp expo num)
 --------------------------------------------------------------------------------
 -- * A5
 -- Define the @eval@ function which takes a value for x and an expression and
@@ -130,10 +151,6 @@ polyToExpr p = listToExpr $ toList p
         garbageCollector (Binary AddOp expr (Num 0)) = expr
         garbageCollector expr = expr
 
-
-
-    
-    
 -- Write (and check) a quickCheck property for this function similar to
 -- question 6. 
 
@@ -179,10 +196,15 @@ diffFile :: FilePath
 diffFile = "difficulty.txt"
 
 readDifficulty :: IO Difficulty
-readDifficulty = undefined
+readDifficulty = do
+  diff <- readFile diffFile
+  return (read diff)
 
 writeDifficulty :: Difficulty -> IO ()
-writeDifficulty = undefined
+writeDifficulty diff = writeFile diffFile (show diff)
+
+
+
 
 --------------------------------------------------------------------------------
 -- * A11
@@ -193,6 +215,24 @@ writeDifficulty = undefined
 -- the difficulty by one. Then play again.
 
 play :: IO ()
-play = undefined
+play = do
+  diff <- readDifficulty
+  i <- generate (choose (-10,10))
+  expr <- generate (genDifficulties diff)
+  putStrLn ("Now solve the following expression with x = " ++ (show i))
+  putStrLn ("")
+  putStrLn (show $ simplify expr)
+  putStrLn ("")
+  putStr ("@>") 
+  answer <- readLn
+  if eval i expr == answer 
+    then do
+      putStrLn ("Well Done")
+      writeDifficulty (diff + 1)
+        else do 
+          putStrLn ("No it should have been " ++ (show (eval i expr)))
+          writeDifficulty (diff - 1)
+  putStrLn ("")
+  play
 
 --------------------------------------------------------------------------------
