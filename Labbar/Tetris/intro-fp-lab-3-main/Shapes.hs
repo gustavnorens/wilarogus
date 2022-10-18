@@ -240,4 +240,4 @@ combine s1 s2 = zipShapeWith compSquares (pads s1) (pads s2)
       | x == Nothing && y /= Nothing = y
       | x /= Nothing && y == Nothing = x
       | x == Nothing && y == Nothing = Nothing
-      | otherwise = error "overlapping shapes"
+      

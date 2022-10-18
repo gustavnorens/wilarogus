@@ -118,21 +118,21 @@ startTetris rs = Tetris (startPosition, piece) well supply
 -- | React to input. The function returns 'Nothing' when it's game over,
 -- and @'Just' (n,t)@, when the game continues in a new state @t@.
 
--- When tthis function is called it checks which action was commited
+-- When this function is called it checks which action was commited
 -- and depending on the action calls on another function. If no action was 
 -- commited it calls on the tick function
 stepTetris :: Action -> Tetris -> Maybe (Int, Tetris)
 stepTetris action t
-  | action == MoveDown = Just (0, (moveToBottom t))
+  | action == MoveDown = Just (0, movePieceDown t)
   | action == MoveRight = Just (0, (movePiece 1 t))
   | action == MoveLeft = Just (0, (movePiece (-1) t))
   | action == Rotate = Just (0, rotate t)
   | collision (move (0, 1) t) = dropNewPiece t
   | otherwise = tick t 
   where
-    moveToBottom t           -- Moves a piece downwards until it collides with the well th shape in the well
+    movePieceDown t    -- Moves a piece downwards until it collides with the well th shape in the well
       | collision (move (0, 1) t) = t
-      | otherwise = (moveToBottom (move (0, 1) t))
+      | otherwise = move (0, 1) t
 
 -- A functions that checks if the falling piece collides with the edges of the well
 -- or with the pieces in the well. It calls on different helper functions that 
@@ -185,9 +185,12 @@ adjust t
 -- Combines the falling shape with the shapes in the well and takes
 -- out a new shape from the shape supply which will be the new falling piece.
 dropNewPiece :: Tetris -> Maybe (Int, Tetris)
-dropNewPiece (Tetris (p, s) w (x:xs)) = Just ((fst (clearLines (combine w (place (p, s)))))
-  , (Tetris (startPosition, x) (snd (clearLines (combine w (place (p, s))))) xs))
-
+dropNewPiece (Tetris (p, s) w (x:xs))
+  | collision newTetris = Nothing
+  | otherwise = Just (0, newTetris)
+  where
+    score = fst $ clearLines $ combine w (place (p, s))
+    newTetris = (Tetris (startPosition, x) (snd (clearLines (combine w (place (p, s))))) xs) 
 
 -- A functions that removes a line if it is full of non-empty squares. 
 -- Returns how many lines where cleared and the new shape.

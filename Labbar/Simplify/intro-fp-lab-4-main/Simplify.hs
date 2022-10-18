@@ -45,7 +45,8 @@ instance Show Expr where
   show (Binary MulOp expr (Num 1)) = show expr
   show (Binary AddOp (Num 0) expr) = show expr
   show (Binary AddOp expr (Num 0)) = show expr
-  show (Binary AddOp expr (Num x)) = if x < 0 then show expr ++ show (Num x) else show expr ++ "+" ++ show (Num x)
+  show (Binary AddOp expr (Num x)) = if x < 0 then 
+    show expr ++ show (Num x) else show expr ++ "+" ++ show (Num x)
   show (Binary binOp expr1 expr2)
     | binOp == AddOp = show expr1 ++ "+" ++ show expr2
     | otherwise      = show expr1 ++ "*" ++ show expr2
@@ -73,10 +74,6 @@ genNum :: Difficulty -> Gen Expr
 genNum n = do
   i <- choose (-10 + (-10 * n), 10 + (n * 10))
   return (Num i)
-genNum' :: Difficulty -> Gen Expr
-genNum' n = do
-  i <- choose (1, 1 + n)
-  return (Num i)
 genExpo :: Difficulty -> Gen Expr 
 genExpo n = do
   i <- choose (1, 1 + n)
@@ -88,18 +85,7 @@ genBinary = do
   binOp <- elements [AddOp, MulOp]
   return (Binary binOp expr1 expr2)
 
-genDifficulties :: Difficulty -> Gen Expr
-genDifficulties n = do
-  binExpo <- (genBinexpo n)
-  diff <- frequency [(2, genNum n),(3, genDifficulties (n-1))]
-  num <-genNum n 
-  return (if n > 0 then (Binary AddOp binExpo diff) else (Binary AddOp binExpo num))
 
-genBinexpo :: Difficulty -> Gen Expr
-genBinexpo n = do
-  expo <- genExpo n
-  num <- genNum' n
-  return (Binary MulOp expo num)
 --------------------------------------------------------------------------------
 -- * A5
 -- Define the @eval@ function which takes a value for x and an expression and
@@ -120,11 +106,11 @@ eval i (Expo n)    = i ^ n
 -- by solving the smaller problems and combining them in the right way. 
 
 exprToPoly :: Expr -> Poly
-exprToPoly (Num n)                    = fromList [n]
-exprToPoly (Expo n)                   = fromList (1 : replicate n 0) 
+exprToPoly (Num n)  = fromList [n]
+exprToPoly (Expo n) = fromList (1 : replicate n 0) 
 exprToPoly (Binary binOp expr1 expr2)
-  | binOp == AddOp = (exprToPoly expr1) + (exprToPoly expr2)
-  | otherwise = (exprToPoly expr1) * (exprToPoly expr2)
+  | binOp == AddOp  = (exprToPoly expr1) + (exprToPoly expr2)
+  | otherwise       = (exprToPoly expr1) * (exprToPoly expr2)
 -- Define (and check) @prop_exprToPoly@, which checks that evaluating the
 -- polynomial you get from @exprToPoly@ gives the same answer as evaluating
 -- the expression.
@@ -140,12 +126,12 @@ polyToExpr :: Poly -> Expr
 polyToExpr p = listToExpr $ toList p
   where 
     listToExpr :: [Int] -> Expr
-    listToExpr [] = Num 0
+    listToExpr []  = Num 0
     listToExpr [x] = Num x
     listToExpr (x:xs)
-      | x == 0 = listToExpr xs
-      | x == 1 = garbageCollector (Binary AddOp (Expo (length xs)) (listToExpr xs))
-      | otherwise = garbageCollector (Binary AddOp (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
+      | x == 0     = listToExpr xs
+      | x == 1     = garbageCollector (Binary AddOp (Expo (length xs)) (listToExpr xs))
+      | otherwise  = garbageCollector (Binary AddOp (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
       where
         garbageCollector :: Expr -> Expr
         garbageCollector (Binary AddOp expr (Num 0)) = expr
@@ -235,4 +221,22 @@ play = do
   putStrLn ("")
   play
 
---------------------------------------------------------------------------------
+--We use these to generate better data in A11
+genDifficulties :: Difficulty -> Gen Expr
+genDifficulties n = do
+  binExpo <- (genBinexpo n)
+  diff    <- frequency [(2, genNum n),(3, genDifficulties (n-1))]
+  num     <-genNum n 
+  return (if n > 0 then (Binary AddOp binExpo diff) 
+    else (Binary AddOp binExpo num))
+
+genBinexpo :: Difficulty -> Gen Expr
+genBinexpo n = do
+  expo <- genExpo n
+  num  <- genNum' n
+  return (Binary MulOp expo num)
+
+genNum' :: Difficulty -> Gen Expr
+genNum' n = do
+  i <- choose (1, 1 + n)
+  return (Num i) 
