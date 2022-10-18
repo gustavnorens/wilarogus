@@ -187,7 +187,7 @@ adjust t
 dropNewPiece :: Tetris -> Maybe (Int, Tetris)
 dropNewPiece (Tetris (p, s) w (x:xs))
   | collision newTetris = Nothing
-  | otherwise = Just (0, newTetris)
+  | otherwise = Just (score, newTetris)
   where
     score = fst $ clearLines $ combine w (place (p, s))
     newTetris = (Tetris (startPosition, x) (snd (clearLines (combine w (place (p, s))))) xs) 

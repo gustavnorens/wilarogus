@@ -24,11 +24,15 @@ data BinOp = AddOp | MulOp deriving Eq
 -- x, your data type should *not* use 'String' or 'Char' anywhere, since this is
 -- not needed.
 
+
+-- Data Expr. With an Integer, Binary and Exponent constructor
 data Expr = Num Int | Binary BinOp Expr Expr | Expo Int
 
 --------------------------------------------------------------------------------
 -- * A2
 -- Define the data type invariant that checks that exponents are never negative
+-- Checks if exponent is negative then calls recusivelsy on all expressions to check
+-- if the condidtion holds for all possible ones
 prop_Expr :: Expr -> Bool
 prop_Expr (Expo n)                = if n < 0 then False else True
 prop_Expr (Binary _  expr1 expr2) = and $ map prop_Expr [expr1, expr2]
@@ -40,6 +44,7 @@ prop_Expr _                       = True
 -- lecture). You can use Haskell notation for powers: x^2. You should show x^1 
 -- as just x. 
 
+-- Show instance for the Expr datatype 
 instance Show Expr where
   show (Binary MulOp (Num 1) expr) = show expr
   show (Binary MulOp expr (Num 1)) = show expr
@@ -67,8 +72,10 @@ instance Show Expr where
 -- which gives hints to QuickCheck on possible smaller expressions that it
 -- could use to find a smaller counterexample for failing tests.
 
+-- Arbitrary instance for the Expr datatype uses multiple generators
+-- and uses the genBinary generator recursively so that we can get larger binary numbers
 instance Arbitrary Expr
-  where arbitrary = frequency [(1, genNum 10),(1, genExpo 9),(3, genBinary)]
+  where arbitrary = frequency [(1, genNum 100),(1, genExpo 50),(3, genBinary)]
 
 genNum :: Difficulty -> Gen Expr
 genNum n = do
@@ -91,6 +98,8 @@ genBinary = do
 -- Define the @eval@ function which takes a value for x and an expression and
 -- evaluates it.
 
+-- Evaluates an expression with a value for x uses recursion for all cases that 
+-- are of type binary and pattern matching for Integers and Exponents
 eval :: Int -> Expr -> Int
 eval i (Binary binOp expr1 expr2) 
   | binOp == AddOp = sum $ map (eval i) [expr1, expr2]
@@ -105,15 +114,20 @@ eval i (Expo n)    = i ^ n
 -- Here it is important to think recursively to just solve the bigger problem
 -- by solving the smaller problems and combining them in the right way. 
 
+-- Function that takes an expression and returns a polynomial.
+-- again we use recursion for the Binary type to solve all possible Exprs.
 exprToPoly :: Expr -> Poly
 exprToPoly (Num n)  = fromList [n]
 exprToPoly (Expo n) = fromList (1 : replicate n 0) 
 exprToPoly (Binary binOp expr1 expr2)
   | binOp == AddOp  = (exprToPoly expr1) + (exprToPoly expr2)
   | otherwise       = (exprToPoly expr1) * (exprToPoly expr2)
+
 -- Define (and check) @prop_exprToPoly@, which checks that evaluating the
 -- polynomial you get from @exprToPoly@ gives the same answer as evaluating
 -- the expression.
+
+--Checks if the evaluated Expr it the same as the evaluated Polynomial
 
 prop_exprToPoly :: Expr -> Int -> Bool
 prop_exprToPoly expr i = eval i expr == evalPoly i (exprToPoly expr)
@@ -122,6 +136,9 @@ prop_exprToPoly expr i = eval i expr == evalPoly i (exprToPoly expr)
 -- * A7
 -- Now define the function going in the other direction.
 
+-- Takes a polynomial and returns a simplified Expression.
+-- Uses recursion for Binary types and the garbage collector function
+-- in order to collect junk such as Addition by zero at the end.
 polyToExpr :: Poly -> Expr
 polyToExpr p = listToExpr $ toList p
   where 
@@ -130,8 +147,10 @@ polyToExpr p = listToExpr $ toList p
     listToExpr [x] = Num x
     listToExpr (x:xs)
       | x == 0     = listToExpr xs
-      | x == 1     = garbageCollector (Binary AddOp (Expo (length xs)) (listToExpr xs))
-      | otherwise  = garbageCollector (Binary AddOp (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
+      | x == 1     = garbageCollector 
+        (Binary AddOp (Expo (length xs)) (listToExpr xs))
+      | otherwise  = garbageCollector 
+        (Binary AddOp (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
       where
         garbageCollector :: Expr -> Expr
         garbageCollector (Binary AddOp expr (Num 0)) = expr
@@ -140,6 +159,8 @@ polyToExpr p = listToExpr $ toList p
 -- Write (and check) a quickCheck property for this function similar to
 -- question 6. 
 
+-- Just like the other prop we check if the evaluation of our simplified Expr
+-- is the same as the evaluation for the original poly
 prop_polyToExpr poly i = evalPoly i poly == eval i (polyToExpr poly) 
 
 --------------------------------------------------------------------------------
@@ -147,6 +168,7 @@ prop_polyToExpr poly i = evalPoly i poly == eval i (polyToExpr poly)
 -- Write a function @simplify@ which simplifies an expression by converting it 
 -- to a polynomial and back again.
 
+-- Simplifies the Expr by turning it into a poly and back into an Expr again.
 simplify :: Expr -> Expr
 simplify = polyToExpr . exprToPoly
 
@@ -157,6 +179,10 @@ simplify = polyToExpr . exprToPoly
 -- zero, addition of zero, addition or multiplication of numbers, or x to the
 -- power of zero. (You may need to fix A7)
 
+-- Checks that a simplified functiion doesnt contain any junk.
+-- It can only pass if it fails all pattern matches that are considered "Junk".
+-- We also know that on line here is 88 characters long but we decided to keep it.
+-- in favor of readability and cleanliness of the code
 prop_noJunk :: Expr -> Bool
 prop_noJunk expr =  garbageChecker $ simplify expr
   where 
@@ -176,6 +202,7 @@ prop_noJunk expr =  garbageChecker $ simplify expr
 -- modelled as a natural number. Use the 'diffFile' as file path. Note that the
 -- difficulty should never be below zero.
 
+-- Two simple IO functions that read respectively write to the difficulty.txt file
 type Difficulty = Int
 
 diffFile :: FilePath
@@ -200,10 +227,14 @@ writeDifficulty diff = writeFile diffFile (show diff)
 -- difficulty by one. If the guess was wrong, again give feedback and decrease 
 -- the difficulty by one. Then play again.
 
+-- Play function that starts the guessing "game". Uses new generators for
+-- better and more concise expressions in the game. Also calls itself recursively
+-- such that it starts over when you guess either correct or wrong.
+
 play :: IO ()
 play = do
   diff <- readDifficulty
-  i <- generate (choose (-10,10))
+  i <- generate (choose (1 + diff, (-1) - diff))
   expr <- generate (genDifficulties diff)
   putStrLn ("Now solve the following expression with x = " ++ (show i))
   putStrLn ("")
@@ -213,11 +244,11 @@ play = do
   answer <- readLn
   if eval i expr == answer 
     then do
-      putStrLn ("Well Done")
+      putStrLn ("Well Done, You are good at this!")
       writeDifficulty (diff + 1)
         else do 
           putStrLn ("No it should have been " ++ (show (eval i expr)))
-          writeDifficulty (diff - 1)
+          writeDifficulty (if diff == 0 then diff else diff - 1)
   putStrLn ("")
   play
 
@@ -226,7 +257,7 @@ genDifficulties :: Difficulty -> Gen Expr
 genDifficulties n = do
   binExpo <- (genBinexpo n)
   diff    <- frequency [(2, genNum n),(3, genDifficulties (n-1))]
-  num     <-genNum n 
+  num     <- genNum n 
   return (if n > 0 then (Binary AddOp binExpo diff) 
     else (Binary AddOp binExpo num))
 
