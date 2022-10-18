@@ -75,7 +75,9 @@ instance Show Expr where
 -- Arbitrary instance for the Expr datatype uses multiple generators
 -- and uses the genBinary generator recursively so that we can get larger binary numbers
 instance Arbitrary Expr
-  where arbitrary = frequency [(1, genNum 100),(1, genExpo 50),(3, genBinary)]
+  where arbitrary = frequency [(1, genNum 100),
+                               (1, genExpo 50),
+                               (3, genBinary)]
 
 genNum :: Difficulty -> Gen Expr
 genNum n = do
@@ -150,7 +152,8 @@ polyToExpr p = listToExpr $ toList p
       | x == 1     = garbageCollector 
         (Binary AddOp (Expo (length xs)) (listToExpr xs))
       | otherwise  = garbageCollector 
-        (Binary AddOp (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
+        (Binary AddOp 
+          (Binary MulOp (Expo (length xs)) (Num x)) (listToExpr xs))
       where
         garbageCollector :: Expr -> Expr
         garbageCollector (Binary AddOp expr (Num 0)) = expr
@@ -181,7 +184,7 @@ simplify = polyToExpr . exprToPoly
 
 -- Checks that a simplified functiion doesnt contain any junk.
 -- It can only pass if it fails all pattern matches that are considered "Junk".
--- We also know that on line here is 88 characters long but we decided to keep it.
+-- We also know that on line here is 89 characters long but we decided to keep it.
 -- in favor of readability and cleanliness of the code
 prop_noJunk :: Expr -> Bool
 prop_noJunk expr =  garbageChecker $ simplify expr
