@@ -7,6 +7,13 @@ Maintainer  : alexg@chalmers.se
 Stability   : experimental
 -}
 
+{-
+Grupp 10
+William Flodin
+Gustav Norén
+Aron Karlsson
+-}
+
 module Simplify where
 
 import Poly
